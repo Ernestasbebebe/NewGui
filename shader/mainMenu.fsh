@@ -1,45 +1,34 @@
-#version 330 core
+#ifdef GL_ES
+precision mediump float;
+#endif
 
-out vec4 FragColor;
-
-in vec2 TexCoords;
-
-uniform vec2 resolution;
 uniform float time;
+varying vec2 surfacePosition;
 
-vec3 getBubbleColor(vec2 uv) {
-    // Делаем центр пузыря и перемещаем UV координаты
-    vec2 center = vec2(0.5, 0.5);
-    vec2 displacement = uv - center;
-    
-    // Переливы цвета на основе синусоидальных волн
-    float dist = length(displacement);
-    float wave = sin(dist * 20.0 - time * 2.0) * 0.1;
-    
-    // Радужный градиент
-    vec3 color1 = vec3(0.2, 0.5, 1.0); // Голубой
-    vec3 color2 = vec3(1.0, 0.7, 0.2); // Оранжевый
-    vec3 color3 = vec3(0.9, 0.9, 1.0); // Белый
-    
-    vec3 rainbow = mix(color1, color2, wave + 0.5);
-    rainbow = mix(rainbow, color3, dist);
-
-    // Добавляем эффект отражения и прозрачности
-    float reflection = pow(1.0 - dist, 3.0);
-    vec3 reflectionColor = vec3(1.0);
-    
-    return mix(rainbow, reflectionColor, reflection);
+vec2 random2f( vec2 seed ) {
+	float t = sin(seed.x+seed.y*1e3);
+	return vec2(fract(t*1e5), fract(t*1e6));
 }
 
-void main() {
-    // Нормализуем координаты и задаем вектор UV
-    vec2 uv = TexCoords.xy / resolution.xy;
-    
-    // Получаем цвет для пузыря
-    vec3 bubbleColor = getBubbleColor(uv);
-    
-    // Прозрачность по краям пузыря
-    float alpha = smoothstep(0.5, 0.52, length(uv - vec2(0.5)));
-    
-    FragColor = vec4(bubbleColor, alpha);
+float cvoronoi( in vec2 x )
+{
+    vec2 p = floor( x );
+    vec2  f = fract( x );
+
+    float res = 1.0;
+    for( int j=-1; j<=1; j++ )
+    for( int i=-1; i<=1; i++ )
+    {
+        vec2 b = vec2( i, j );
+	vec2 o = random2f( p + b );
+        vec2 r = vec2( b ) - f + o;
+        float d = dot( r,r );
+	res = min(res,(abs(fract(d*6.0-time*0.5 +o.x*8.)-.5)*8.+d*.8)/sqrt(d*d+1.));
+    }	
+    return res;
+}
+
+void main( void )
+{
+	gl_FragColor = vec4(vec3(.11+cvoronoi(surfacePosition*3.*(sin(time*.5)+1.2))*.5),1.0);
 }
