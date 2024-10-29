@@ -9,28 +9,29 @@ uniform vec4 color3;
 uniform vec4 color4;
 
 float alpha(vec2 d, vec2 d1, float round) {
-	vec2 v = abs(d) - d1 + round;
-	return min(max(v.x, v.y), 0.0) + length(max(v, .0f)) - round;
+    vec2 v = abs(d) - d1 + round;
+    return min(max(v.x, v.y), 0.0) + length(max(v, 0.0)) - round;
 }
 
 void main() {
     vec2 coord = gl_TexCoord[0].st * size;
-    vec2 centre = .5f * size;
+    vec2 centre = 0.5 * size;
     float alphaValue;
 
     if (coord.x < centre.x && coord.y < centre.y) {
-        alphaValue = alpha(centre - coord, centre - 1.f, round.x);
+        alphaValue = alpha(centre - coord, centre - 1.0, round.x);
     } else if (coord.x >= centre.x && coord.y < centre.y) {
-        alphaValue = alpha(coord - centre, centre - 1.f, round.y);
+        alphaValue = alpha(coord - centre, centre - 1.0, round.y);
     } else if (coord.x < centre.x && coord.y >= centre.y) {
-        alphaValue = alpha(centre - coord, centre - 1.f, round.z);
+        alphaValue = alpha(centre - coord, centre - 1.0, round.z);
     } else {
-        alphaValue = alpha(coord - centre, centre - 1.f, round.w);
+        alphaValue = alpha(coord - centre, centre - 1.0, round.w);
     }
 
     vec4 topColor = mix(color1, color2, smoothstep(0.0, 1.0, coord.x / size.x));
     vec4 bottomColor = mix(color3, color4, smoothstep(0.0, 1.0, coord.x / size.x));
     vec4 finalColor = mix(topColor, bottomColor, smoothstep(0.0, 1.0, coord.y / size.y));
 
-    gl_FragColor = vec4(finalColor.rgb, finalColor.a * (1.f - smoothstep(smoothness.x, smoothness.y, abs(alphaValue))));
+    vec2 smoothness = vec2(thickness - 1.5, thickness);
+    gl_FragColor = vec4(finalColor.rgb, finalColor.a * (1.0 - smoothstep(smoothness.x, smoothness.y, abs(alphaValue))));
 }
